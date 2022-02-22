@@ -1,0 +1,14 @@
+app:
+ appId: "17648920"
+http:
+  port: "8081"
+  timeout: "300000"
+fakestoreclientapi:
+  host: "fakestore-client-proxy-api.sg-s1.cloudhub.io"
+  host2: "fakestore-uniqlo-proxy-api.sg-s1.cloudhub.io"
+  port: "80"
+  basepath: "/"
+  protocol: "HTTP"
+version: "v1"
+layer: "wrapper"
+context: "fakestore"

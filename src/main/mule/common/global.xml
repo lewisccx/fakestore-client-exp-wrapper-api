@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
+	
+<http:listener-config name="fakestore-client-exp-wrapper-api-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8081" />
+    </http:listener-config>
+    <apikit:config name="fakestore-client-exp-wrapper-api-config" api="resource::706f4d0a-e4a3-40fb-8365-ae5ac1f0a8d7:fakestore-client-exp-wrapper-api:1.0.1:raml:zip:fakestore-client-exp-wrapper-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+	<http:request-config name="Client_HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="b1a628e0-3466-41c4-8345-f6464ef4028f" >
+		<http:request-connection host="${fakestoreclientapi.host}" port="${fakestoreclientapi.port}" />
+	</http:request-config>
+	<configuration-properties doc:name="Configuration properties" doc:id="acc9fe81-cd8a-4fe1-bd18-cf8102904ae4" file="config//${mule.env}.yaml" />
+	<http:request-config name="Uniqlo_HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="71b90e3e-56d5-46e3-9758-cd85c86b1536" >
+		<http:request-connection host="${fakestoreclientapi.host2}" port="${fakestoreclientapi.port}" />
+	</http:request-config>
+	<api-gateway:autodiscovery apiId="${app.appId}" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="60a4d590-aa3f-4382-b013-38d5b80e3ca3" flowRef="fakestore-client-exp-wrapper-api-main" />
+	<configuration doc:name="Configuration" doc:id="5c1c0d5b-b05e-49b2-b7c9-8bca7848fd97" defaultErrorHandler-ref="globalError_Handler" />
+	<error-handler name="globalError_Handler" doc:id="f79e575b-8669-4ec2-8782-9231efe8344f" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d2900cc9-c74a-4f06-b620-fa608827d56b" type="HTTP:TIMEOUT" >
+			<ee:transform doc:name="Transform Message" doc:id="1d2f98c2-368c-4ce4-9195-b766685e87ac" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"header":{
+		"apiName": p('app.name'),
+		"apiVersion": p('version'),
+		"correlationId": correlationId,
+    }, 
+    "error": {
+		"description": error.description,
+		"status": error.errorType.identifier,
+		"invocationTimestamp": now()
+	}
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="7e626074-c3ba-4596-98f9-7e6e678b2bcb" type="ANY" >
+			<ee:transform doc:name="ANY" doc:id="8d317ff6-2e0b-47b9-a05d-2aa0189e106f" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"header":{
+		"apiName": p('app.name'),
+		"apiVersion": p('version'),
+		"correlationId": correlationId,
+    }, 
+    "error": {
+		"description": error.description,
+		"status": error.errorType.identifier,
+		"invocationTimestamp": now()
+	}
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</on-error-propagate>
+	</error-handler>	
+
+</mule>
